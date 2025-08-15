@@ -7,7 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.resumebuilder.ui.screens.*
-import com.example.resumebuilder.ui.screens.form.PersonalInfoScreen
+import com.example.resumebuilder.ui.screens.forms.PersonalInfoScreen
 import com.example.resumebuilder.ui.screens.forms.ExperienceScreen
 
 import com.example.resumebuilder.ui.screens.forms.SkillsScreen

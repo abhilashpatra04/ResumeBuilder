@@ -20,30 +20,40 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.resumebuilder.ViewModels.ResumeViewModel
 import com.example.resumebuilder.ui.components.PrimaryButton
 import com.example.resumebuilder.ui.components.SectionCard
 import com.example.resumebuilder.ui.theme.HeadingDeepBlue
 import com.example.resumebuilder.ui.theme.ResumeText
 import com.example.resumebuilder.ui.theme.TextPrimary
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomizeScreen(
     onBack: () -> Unit,
-    onPreview: () -> Unit
+    onPreview: () -> Unit,
+    viewModel: ResumeViewModel = viewModel()
 ) {
+    // For Phase 1, we'll keep these as local state
+    // In Phase 2, these would be stored in the ViewModel
     var headingSize by remember { mutableStateOf(16f) }
     var bodySize by remember { mutableStateOf(12f) }
     var boldHeadings by remember { mutableStateOf(true) }
     // Simple color toggles for Phase 1
     var headingColor by remember { mutableStateOf(HeadingDeepBlue) }
     var bodyColor by remember { mutableStateOf(TextPrimary) }
+    
+    // Get the current resume data to check if a template is selected
+    val resumeData by viewModel.resumeData.collectAsState()
 
     Scaffold(
         topBar = {

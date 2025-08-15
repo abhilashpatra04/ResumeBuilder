@@ -1,65 +1,122 @@
-package com.example.resumebuilder.ui.screens.form
+package com.example.resumebuilder.ui.screens.forms
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.resumebuilder.ViewModels.ResumeViewModel
+import com.example.resumebuilder.model.PersonalInfo
+import com.example.resumebuilder.ui.components.FormField
+import com.example.resumebuilder.ui.components.PrimaryButton
+import com.example.resumebuilder.ui.components.ProgressHeader
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PersonalInfoScreen(
+    onBack: () -> Unit,
     onNext: () -> Unit,
-    onBack: () -> Boolean
+    viewModel: ResumeViewModel = hiltViewModel()
 ) {
-    var name by remember { mutableStateOf("") }
-    var jobTitle by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var linkedIn by remember { mutableStateOf("") }
-    var github by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Scrollable content
+    val resumeData by viewModel.resumeData.collectAsState()
+    val personalInfo = resumeData.personalInfo
+    
+    var name by remember { mutableStateOf(personalInfo.name) }
+    var email by remember { mutableStateOf(personalInfo.email) }
+    var phone by remember { mutableStateOf(personalInfo.phone) }
+    var address by remember { mutableStateOf(personalInfo.address) }
+    var summary by remember { mutableStateOf(personalInfo.summary) }
+    
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Personal Information") },
+                navigationIcon = { 
+                    IconButton(onClick = onBack) { 
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null) 
+                    } 
+                }
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize()
         ) {
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full Name") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(value = jobTitle, onValueChange = { jobTitle = it }, label = { Text("Job Title") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(value = linkedIn, onValueChange = { linkedIn = it }, label = { Text("LinkedIn URL") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(value = github, onValueChange = { github = it }, label = { Text("GitHub URL") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
+            ProgressHeader(stepLabel = "Step 1 of 3", totalSteps = 3, currentStepIndex = 0)
             Spacer(modifier = Modifier.height(16.dp))
-        }
+            
+            // Scrollable content
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                FormField(
+                    label = "Full Name",
+                    value = name,
+                    onValueChange = { name = it },
+                    placeholder = "John Doe"
+                )
+                
+                FormField(
+                    label = "Email",
+                    value = email,
+                    onValueChange = { email = it },
+                    placeholder = "john.doe@example.com"
+                )
+                
+                FormField(
+                    label = "Phone",
+                    value = phone,
+                    onValueChange = { phone = it },
+                    placeholder = "+1 (555) 123-4567"
+                )
+                
+                FormField(
+                    label = "Address",
+                    value = address,
+                    onValueChange = { address = it },
+                    placeholder = "123 Main St, City, State, ZIP"
+                )
+                
+                FormField(
+                    label = "Professional Summary",
+                    value = summary,
+                    onValueChange = { summary = it },
+                    placeholder = "Brief overview of your professional background and key strengths",
+                    singleLine = false
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
-        // Fixed bottom button
-        Button(
-            onClick = onNext,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .align(Alignment.CenterHorizontally)
-        ) {
-            Text("Next")
+            // Save & Continue button
+            PrimaryButton(
+                text = "Save & Continue",
+                onClick = {
+                    // Update the ViewModel with the new personal info
+                    viewModel.updatePersonalInfo(
+                        PersonalInfo(
+                            name = name,
+                            email = email,
+                            phone = phone,
+                            address = address,
+                            summary = summary
+                        )
+                    )
+                    onNext()
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

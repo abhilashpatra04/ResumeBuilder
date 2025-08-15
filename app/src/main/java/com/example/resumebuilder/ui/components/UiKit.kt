@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.example.resumebuilder.ui.theme.ResumeText
 
 @Composable
-fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun PrimaryButton(text: String, onClick: @Composable () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Button(
         onClick = onClick,
         enabled = enabled,

@@ -7,29 +7,37 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.resumebuilder.R
+import com.example.resumebuilder.ViewModels.ResumeViewModel
+import com.example.resumebuilder.model.Template
 import com.example.resumebuilder.ui.components.PrimaryButton
 
-data class TemplateUi(val id: String, val title: String, val preview: Int)
+data class TemplateUi(val template: Template, val title: String, val preview: Int)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplatePickerScreen(
     onBack: () -> Unit,
-    onSelectTemplate: (String) -> Unit
+    onSelectTemplate: (String) -> Unit,
+    viewModel: ResumeViewModel = viewModel()
 ) {
     val templates = listOf(
-        TemplateUi("olivia", "Olivia (One‑Column)", R.drawable.ic_template_one),
-        TemplateUi("sarah", "Sarah (Sidebar)", R.drawable.ic_template_two)
+        TemplateUi(Template.MODERN, "Olivia (One‑Column)", R.drawable.ic_template_one),
+        TemplateUi(Template.PROFESSIONAL, "Sarah (Sidebar)", R.drawable.ic_template_two)
     )
-    var selected by remember { mutableStateOf<String?>(null) }
+    
+    val resumeData by viewModel.resumeData.collectAsState()
+    var selected by remember { mutableStateOf(resumeData.selectedTemplate) }
+    
+    LaunchedEffect(selected) {
+        selected?.let { viewModel.selectTemplate(it) }
+    }
 
     Scaffold(
         topBar = {
@@ -38,12 +46,13 @@ fun TemplatePickerScreen(
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } }
             )
         },
+        modifier = Modifier.fillMaxSize(),
         bottomBar = {
             Surface(tonalElevation = 2.dp) {
                 Column(Modifier.padding(16.dp)) {
                     PrimaryButton(
                         text = "Customize",
-                        onClick = { selected?.let(onSelectTemplate) },
+                        onClick = { onSelectTemplate(selected?.name ?: Template.MODERN.name) },
                         enabled = selected != null
                     )
                 }
@@ -59,9 +68,9 @@ fun TemplatePickerScreen(
         ) {
             items(templates) { t ->
                 ElevatedCard(
-                    onClick = { selected = t.id },
+                    onClick = { selected = t.template },
                     colors = CardDefaults.elevatedCardColors(
-                        containerColor = if (selected == t.id) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        containerColor = if (selected == t.template) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                         else MaterialTheme.colorScheme.surface
                     )
                 ) {
@@ -71,7 +80,7 @@ fun TemplatePickerScreen(
                             .height(120.dp))
                         Spacer(Modifier.height(8.dp))
                         Text(t.title, style = MaterialTheme.typography.titleMedium)
-                        if (selected == t.id) {
+                        if (selected == t.template) {
                             Spacer(Modifier.height(4.dp)); Text("Selected", color = MaterialTheme.colorScheme.primary)
                         }
                     }
