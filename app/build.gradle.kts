@@ -79,6 +79,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.animation.core.lint)
     kapt(libs.hilt.compiler)
 
     // Networking (kept minimal; not used until AI provider selected)
