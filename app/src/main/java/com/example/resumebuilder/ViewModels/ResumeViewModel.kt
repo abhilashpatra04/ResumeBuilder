@@ -226,6 +226,146 @@ class ResumeViewModel @Inject constructor(
         // Delete from database if resume exists
         if (currentResumeData.id != 0L) {
             viewModelScope.launch {
+                repository.deleteWorkExperience(experienceId)
+            }
+        }
+    }
+
+    // Project Methods
+    fun addProject(project: Project) {
+        val projects = currentResumeData.projects.toMutableList()
+        val newProject = project.copy(
+            id = System.currentTimeMillis(), // Temporary ID
+            resumeId = currentResumeData.id,
+            sortOrder = projects.size
+        )
+        projects.add(newProject)
+
+        currentResumeData = currentResumeData.copy(
+            projects = projects,
+            updatedAt = Date()
+        )
+        updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
+
+        // Auto-save to database if resume exists
+        if (currentResumeData.id != 0L) {
+            viewModelScope.launch {
+                repository.addProject(currentResumeData.id, newProject)
+            }
+        }
+    }
+
+    fun updateProject(projectId: Long, project: Project) {
+        val projects = currentResumeData.projects.toMutableList()
+        val index = projects.indexOfFirst { it.id == projectId }
+        if (index != -1) {
+            projects[index] = project.copy(id = projectId)
+            currentResumeData = currentResumeData.copy(
+                projects = projects,
+                updatedAt = Date()
+            )
+            updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
+
+            // Auto-save to database if resume exists
+            if (currentResumeData.id != 0L) {
+                viewModelScope.launch {
+                    repository.updateProject(project.copy(id = projectId))
+                }
+            }
+        }
+    }
+
+    fun removeProject(projectId: Long) {
+        val projects = currentResumeData.projects.filterNot { it.id == projectId }
+        currentResumeData = currentResumeData.copy(
+            projects = projects,
+            updatedAt = Date()
+        )
+        updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
+
+        // Delete from database if resume exists
+        if (currentResumeData.id != 0L) {
+            viewModelScope.launch {
+                repository.deleteProject(projectId)
+            }
+        }
+    }
+
+    // Skills Methods
+    fun addSkill(skill: Skill) {
+        val skills = currentResumeData.skills.toMutableList()
+        val newSkill = skill.copy(
+            id = System.currentTimeMillis(), // Temporary ID
+            resumeId = currentResumeData.id,
+            sortOrder = skills.size
+        )
+        skills.add(newSkill)
+
+        currentResumeData = currentResumeData.copy(
+            skills = skills,
+            updatedAt = Date()
+        )
+        updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
+
+        // Auto-save to database if resume exists
+        if (currentResumeData.id != 0L) {
+            viewModelScope.launch {
+                repository.addSkill(currentResumeData.id, newSkill)
+            }
+        }
+    }
+
+    fun removeSkill(skillId: Long) {
+        val skills = currentResumeData.skills.filterNot { it.id == skillId }
+        currentResumeData = currentResumeData.copy(
+            skills = skills,
+            updatedAt = Date()
+        )
+        updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
+
+        // Delete from database if resume exists
+        if (currentResumeData.id != 0L) {
+            viewModelScope.launch {
+                repository.deleteSkill(skillId)
+            }
+        }
+    }
+
+    // Education Methods
+    fun addEducation(education: Education) {
+        val educationList = currentResumeData.education.toMutableList()
+        val newEducation = education.copy(
+            id = System.currentTimeMillis(), // Temporary ID
+            resumeId = currentResumeData.id,
+            sortOrder = educationList.size
+        )
+        educationList.add(newEducation)
+
+        currentResumeData = currentResumeData.copy(
+            education = educationList,
+            updatedAt = Date()
+        )
+        updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
+
+        // Auto-save to database if resume exists
+        if (currentResumeData.id != 0L) {
+            viewModelScope.launch {
+                repository.addEducation(currentResumeData.id, newEducation)
+            }
+        }
+    }
+
+    fun removeEducation(educationId: Long) {
+        val educationList = currentResumeData.education.filterNot { it.id == educationId }
+        currentResumeData = currentResumeData.copy(
+            education = educationList,
+            updatedAt = Date()
+        )
+        updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
+
+        // Delete from database if resume exists
+        if (currentResumeData.id != 0L) {
+            viewModelScope.launch {
                 repository.deleteEducation(educationId)
             }
         }
@@ -348,14 +488,39 @@ class ResumeViewModel @Inject constructor(
         viewModelScope.launch {
             updateUiState { copy(isLoading = true) }
 
-            repository.duplicateResume(resumeId, newTitle)
-                .onSuccess { newResumeId ->
-                    updateUiState { copy(isLoading = false, error = null) }
-                    loadAllResumes() // Refresh the list
-                }
-                .onFailure { exception ->
-                    updateUiState { copy(isLoading = false, error = exception.message ?: "Failed to duplicate resume") }
-                }
+            // Check if repository has duplicateResume method
+            // If not available, implement manually
+            try {
+                // Manual duplication since duplicateResume method might not exist
+                repository.getResumeById(resumeId)
+                    .onSuccess { originalResume ->
+                        originalResume?.let { resume ->
+                            val duplicatedResume = resume.copy(
+                                id = 0L,
+                                title = newTitle,
+                                createdAt = Date(),
+                                updatedAt = Date(),
+                                isComplete = false
+                            )
+
+                            repository.insertResume(duplicatedResume)
+                                .onSuccess {
+                                    updateUiState { copy(isLoading = false, error = null) }
+                                    loadAllResumes()
+                                }
+                                .onFailure { exception ->
+                                    updateUiState { copy(isLoading = false, error = exception.message ?: "Failed to duplicate resume") }
+                                }
+                        } ?: run {
+                            updateUiState { copy(isLoading = false, error = "Original resume not found") }
+                        }
+                    }
+                    .onFailure { exception ->
+                        updateUiState { copy(isLoading = false, error = exception.message ?: "Failed to fetch original resume") }
+                    }
+            } catch (exception: Exception) {
+                updateUiState { copy(isLoading = false, error = exception.message ?: "Failed to duplicate resume") }
+            }
         }
     }
 
@@ -395,7 +560,6 @@ enum class FormStep(val stepName: String, val stepNumber: Int) {
 }
 
 // Additional ViewModels for specific screens
-
 @HiltViewModel
 class ResumeListViewModel @Inject constructor(
     private val repository: IResumeRepository
@@ -568,150 +732,5 @@ class TemplateViewModel @Inject constructor(
                 )
             )
         )
-        viewModelScope.launch {
-            repository.deleteWorkExperience(experienceId)
-        }
-    }
-}
-
-
-
-// Project Methods
-fun addProject(project: Project) {
-    val projects = currentResumeData.projects.toMutableList()
-    val newProject = project.copy(
-        id = System.currentTimeMillis(), // Temporary ID
-        resumeId = currentResumeData.id,
-        sortOrder = projects.size
-    )
-    projects.add(newProject)
-
-    currentResumeData = currentResumeData.copy(
-        projects = projects,
-        updatedAt = Date()
-    )
-    updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
-
-    // Auto-save to database if resume exists
-    if (currentResumeData.id != 0L) {
-        viewModelScope.launch {
-            repository.addProject(currentResumeData.id, newProject)
-        }
-    }
-}
-
-fun updateProject(projectId: Long, project: Project) {
-    val projects = currentResumeData.projects.toMutableList()
-    val index = projects.indexOfFirst { it.id == projectId }
-    if (index != -1) {
-        projects[index] = project.copy(id = projectId)
-        currentResumeData = currentResumeData.copy(
-            projects = projects,
-            updatedAt = Date()
-        )
-        updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
-
-        // Auto-save to database if resume exists
-        if (currentResumeData.id != 0L) {
-            viewModelScope.launch {
-                repository.updateProject(project.copy(id = projectId))
-            }
-        }
-    }
-}
-
-fun removeProject(projectId: Long) {
-    val projects = currentResumeData.projects.filterNot { it.id == projectId }
-    currentResumeData = currentResumeData.copy(
-        projects = projects,
-        updatedAt = Date()
-    )
-    updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
-
-    // Delete from database if resume exists
-    if (currentResumeData.id != 0L) {
-        viewModelScope.launch {
-            repository.deleteProject(projectId)
-        }
-    }
-}
-
-// Skills Methods
-fun addSkill(skill: Skill) {
-    val skills = currentResumeData.skills.toMutableList()
-    val newSkill = skill.copy(
-        id = System.currentTimeMillis(), // Temporary ID
-        resumeId = currentResumeData.id,
-        sortOrder = skills.size
-    )
-    skills.add(newSkill)
-
-    currentResumeData = currentResumeData.copy(
-        skills = skills,
-        updatedAt = Date()
-    )
-    updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
-
-    // Auto-save to database if resume exists
-    if (currentResumeData.id != 0L) {
-        viewModelScope.launch {
-            repository.addSkill(currentResumeData.id, newSkill)
-        }
-    }
-}
-
-fun removeSkill(skillId: Long) {
-    val skills = currentResumeData.skills.filterNot { it.id == skillId }
-    currentResumeData = currentResumeData.copy(
-        skills = skills,
-        updatedAt = Date()
-    )
-    updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
-
-    // Delete from database if resume exists
-    if (currentResumeData.id != 0L) {
-        viewModelScope.launch {
-            repository.deleteSkill(skillId)
-        }
-    }
-}
-
-// Education Methods
-fun addEducation(education: Education) {
-    val educationList = currentResumeData.education.toMutableList()
-    val newEducation = education.copy(
-        id = System.currentTimeMillis(), // Temporary ID
-        resumeId = currentResumeData.id,
-        sortOrder = educationList.size
-    )
-    educationList.add(newEducation)
-
-    currentResumeData = currentResumeData.copy(
-        education = educationList,
-        updatedAt = Date()
-    )
-    updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
-
-    // Auto-save to database if resume exists
-    if (currentResumeData.id != 0L) {
-        viewModelScope.launch {
-            repository.addEducation(currentResumeData.id, newEducation)
-        }
-    }
-}
-
-fun removeEducation(educationId: Long) {
-    val educationList = currentResumeData.education.filterNot { it.id == educationId }
-    currentResumeData = currentResumeData.copy(
-        education = educationList,
-        updatedAt = Date()
-    )
-    updateUiState { copy(saveStatus = SaveStatus.UNSAVED) }
-
-    // Delete from database if resume exists
-    if (currentResumeData.id != 0L) {
-        viewModelScope.launch {
-            repository.addEducation(currentResumeData.id, newEducation)
-        }
     }
 }

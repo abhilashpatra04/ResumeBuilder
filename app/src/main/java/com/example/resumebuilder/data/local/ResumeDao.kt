@@ -174,8 +174,8 @@ interface ResumeDao {
     @Query("DELETE FROM languages WHERE resumeId = :resumeId")
     suspend fun deleteLanguagesByResumeId(resumeId: Long)
 
-    // References CRUD
-    @Query("SELECT * FROM references WHERE resumeId = :resumeId ORDER BY sortOrder ASC")
+    // References CRUD - Fixed table name from 'references' to 'reference_table'
+    @Query("SELECT * FROM reference_table WHERE resumeId = :resumeId ORDER BY sortOrder ASC")
     suspend fun getReferencesByResumeId(resumeId: Long): List<ReferenceEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -190,10 +190,10 @@ interface ResumeDao {
     @Delete
     suspend fun deleteReference(reference: ReferenceEntity)
 
-    @Query("DELETE FROM references WHERE id = :referenceId")
+    @Query("DELETE FROM reference_table WHERE id = :referenceId")
     suspend fun deleteReferenceById(referenceId: Long)
 
-    @Query("DELETE FROM references WHERE resumeId = :resumeId")
+    @Query("DELETE FROM reference_table WHERE resumeId = :resumeId")
     suspend fun deleteReferencesByResumeId(resumeId: Long)
 
     // Custom Sections CRUD
@@ -397,7 +397,7 @@ interface ResumeDao {
     @Query("SELECT COUNT(*) FROM resumes WHERE isComplete = 1")
     suspend fun getCompletedResumeCount(): Int
 
-    @Query("SELECT * FROM resumes WHERE title LIKE '%' || :searchQuery || '%' OR personalInfo.fullName LIKE '%' || :searchQuery || '%'")
+    @Query("SELECT * FROM resumes WHERE title LIKE '%' || :searchQuery || '%'")
     suspend fun searchResumes(searchQuery: String): List<ResumeEntity>
 
     @Query("SELECT DISTINCT templateId FROM resumes")
